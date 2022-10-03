@@ -47,7 +47,7 @@ Temporary Items
 node_modules
 npm-debug.log
 
-dist
+# dist
 .rpt2_cache
 
 # WebStorm & IntelliJ Platfrom
