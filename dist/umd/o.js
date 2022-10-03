@@ -119,7 +119,8 @@
             }
             resources.forEach(function (req) { return req.config.method === "GET" && req.applyQuery(query); });
             var contentId = 0;
-            this.batchBody += resources.map(function (req) {
+            this.batchBody += resources
+                .map(function (req) {
                 contentId++;
                 if (req.config.method === "GET") {
                     return [
@@ -129,7 +130,7 @@
                         "",
                         req.config.method + " " + _this.getRequestURL(req) + " HTTP/1.1",
                         "" + _this.getHeaders(req),
-                        "" + _this.getBody(req)
+                        "" + _this.getBody(req),
                     ].join(CRLF);
                 }
                 else {
@@ -141,10 +142,11 @@
                         "",
                         req.config.method + " " + _this.getRequestURL(req) + " HTTP/1.1",
                         "" + _this.getHeaders(req),
-                        "" + _this.getBody(req)
+                        "" + _this.getBody(req),
                     ].join(CRLF);
                 }
-            }).join(CRLF + "--" + this.batchUid);
+            })
+                .join(CRLF + "--" + this.batchUid);
             this.batchBody += CRLF + "--" + this.batchUid + "--" + CRLF;
             if (!changeset) {
                 this.batchConfig.headers.set("Content-Type", "multipart/mixed;boundary=" + this.batchUid);
@@ -160,7 +162,7 @@
                             return [4 /*yield*/, req.fetch];
                         case 1:
                             res = _a.sent();
-                            if (!(res.status === 200)) return [3 /*break*/, 3];
+                            if (!(res.status >= 200 && res.status < 400)) return [3 /*break*/, 3];
                             return [4 /*yield*/, res.text()];
                         case 2:
                             data = _a.sent();
@@ -194,13 +196,14 @@
                     return _this.parseResponse(dataSegments.join("\r\n\r\n"), header);
                 }
                 else {
-                    var contentIdHeader = dataSegments[0].split("\r\n").find(function (x) { return x.startsWith("Content-ID: "); });
+                    var contentIdHeader = dataSegments[0].split("\r\n").find(function (x) {
+                        return x.startsWith("Content-ID: ");
+                    });
                     if (contentIdHeader) {
                         try {
                             var contentId = parseInt(contentIdHeader.substring(12), 10);
                         }
-                        catch (ex) {
-                        }
+                        catch (ex) { }
                     }
                     var status = +dataSegments[1].split(" ")[1];
                     if (dataSegments.length === 3) {
@@ -230,12 +233,7 @@
         OBatch.prototype.checkForChangset = function (resources, query) {
             var changeRes = this.getChangeResources(resources);
             if (this.changeset) {
-                this.batchBody += [
-                    "",
-                    "Content-Type: multipart/mixed;boundary=" + this.batchUid,
-                    "",
-                    "--" + this.batchUid
-                ].join(CRLF);
+                this.batchBody += ["", "Content-Type: multipart/mixed;boundary=" + this.batchUid, "", "--" + this.batchUid].join(CRLF);
             }
             else if (changeRes.length > 0) {
                 this.batchBody = "--" + this.batchUid;
@@ -266,9 +264,7 @@
                 d = Math.floor(d / 16);
                 return (c === "x" ? r : (r & 0x7) | 0x8).toString(16);
             });
-            return "" + (this.changeset
-                ? this.batchConfig.batch.changsetBoundaryPrefix
-                : this.batchConfig.batch.boundaryPrefix) + uuid;
+            return "" + (this.changeset ? this.batchConfig.batch.changsetBoundaryPrefix : this.batchConfig.batch.boundaryPrefix) + uuid;
         };
         OBatch.prototype.getHeaders = function (req) {
             // Request headers can be Headers | string[][] | Record<string, string>.
